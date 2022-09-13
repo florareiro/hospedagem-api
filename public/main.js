@@ -1,27 +1,17 @@
+// //INICIANDO O MAPA
+var map = L.map('mapa').setView([0,0], 3);
 
-     //json com dados do cliente
-     let lat, lon;
-     const button = document.getElementById('submit');
-     button.addEventListener('click', async (event) =>{
-            const mood =document.getElementById('mood').value;
-            const data = {lat, lon, mood};
-            const options = {
-                method: 'POST',
-                headers:{
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            };
-            const response = await fetch('/api', options);
-            const json = await response.json();
-            console.log(json);
-            
-        });
+var icone = L.icon({
+  iconUrl : "img/marker.svg",
+  
+  iconSize:     [32, 37], // size of the icon
+   
+})
+ 
 
-//          //INICIANDO O MAPA
-         const map = L.map('mapa').setView([0,0], 3);
 
-const marker =   L.marker([0, 0]).addTo(map);
+
+const marker =   L.marker([0, 0], {icon: icone}).addTo(map);
 
 const attribution =
     '© OpenStreetMap; <a href ="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -36,30 +26,50 @@ if ('geolocation' in navigator) {
     console.log('geolocalização disponivel');
     lat = position.coords.latitude;
     lon = position.coords.longitude;
-    document.getElementById('latitude').textContent = lat;
-    document.getElementById('longitude').textContent = lon;
     const data = {lat, lon};
     
-    
-    // API CLIMA
-    const API_key = '1e37be63938b4de6be125501220709';
-   const api_url = `http://api.weatherapi.com/v1/current.json?key=${API_key}&q=${lat},${lon}&aqi=no&lo`;
-    const response = await fetch(api_url);
-    const json = await response.json();
-    console.log(json);
-    // console.log(position);
-    marker.setLatLng([lat, lon]);
-    map.setView([lat,lon], 12);   
-   
+  // API HOSPEDAGEM
+    const key_api = 'dc0b091820824302a18c4037fc870ce1';
+    const hospedagem_api = `https://api.geoapify.com/v2/places?categories=accommodation&filter=circle:${lon},${lat},5000&bias=proximity:${lon},${lat}&limit=20&apiKey=${key_api}`;
+    const response_hospedagem = await fetch (hospedagem_api);
+    const hospedagem_json = await response_hospedagem.json();
+ 
 
-    // API RESTAURANTES
-    const key_restaurant = 'dc0b091820824302a18c4037fc870ce1';
-    const restaurant_api = `https://api.geoapify.com/v2/places?categories=catering&filter=circle:${lon},${lat},5000&bias=proximity:${lon},${lat}&limit=20&apiKey=${key_restaurant}`;
-    const response_restaurant = await fetch (restaurant_api);
-    const restaurant_json = await response_restaurant.json();
-    console.log(restaurant_json);
-  
-  
+
+
+    //Filtrar coordenadas da lista de hospedagens para adicionar marcadores
+     var hospedagens = hospedagem_json.features;
+     console.log(hospedagens)
+      let nome_hosp;
+      let coordenadas_hotel;
+
+    
+     for (Feature of hospedagens) {
+        console.log(Feature.geometry.coordinates);
+        coordenadas_hotel = (Feature.geometry.coordinates)
+        nome_hosp = (Feature.properties.name);
+      }
+   
+      function novoIcone (hospedagens, coordenadas_hotel){
+        let icone_hotel = L.icon({
+          iconUrl : "img/hotel.svg",
+          iconSize:     [32, 37], // size of the icon;
+        
+        }) 
+        return L.marker(coordenadas_hotel, { icon: icone_hotel})
+      }
+   
+      let myLayerOption = {
+        pointToLayer: novoIcone
+      }
+ 
+     
+      //Adicionar Marcadores
+     L.geoJSON(hospedagens, myLayerOption).addTo(map).bindPopup(nome_hosp);
+    marker.setLatLng([lat, lon]).addTo(map).bindPopup("Localização Atual"); 
+    // marker.bindPopup(nome_hosp).addTo(map);
+    map.setView([lat,lon], 12);   
+
   });
 
 } else {
